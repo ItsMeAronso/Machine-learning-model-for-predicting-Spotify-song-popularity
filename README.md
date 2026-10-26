@@ -23,7 +23,6 @@ The Random Forest recommends far fewer tracks, but about 58% of them are real hi
 ## Key Insights
 
 - **Artist popularity dominates.** `avg_artist_popularity` accounts for roughly 88% of the Decision Tree's feature importance, so the model mostly captures "popular artists make popular songs". Audio features (liveness, danceability, year, acousticness) add a smaller contribution.
-- [Fill in after running the experiment without the artist feature: Precision of X% when `avg_artist_popularity` is removed, showing how much the audio features alone can predict.]
 
 ![Feature Importance](images/feature_importance_rf.png)
 
