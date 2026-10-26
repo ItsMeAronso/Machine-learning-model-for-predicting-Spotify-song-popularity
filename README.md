@@ -4,7 +4,7 @@ An end-to-end ML project that predicts whether a Spotify track will be popular (
 
 ## Business Objective
 
-For a record label, a wasted marketing budget (False Positive) is more costly than a missed hit (False Negative). The model is therefore tuned for **Precision** on the tracks it recommends, rather than overall accuracy or recall.
+For a record label, a wasted marketing budget (False Positive) is more costly than a missed hit (False Negative). Missing a hit is acceptable as long as the tracks we do invest in are real hits. The model is therefore tuned for **Precision** on the tracks it recommends, rather than overall accuracy or recall.
 
 ## Results
 
@@ -18,13 +18,11 @@ Evaluated on a held-out test set of 3,000 tracks (29.7% popular):
 
 The Random Forest recommends far fewer tracks, but about 58% of them are real hits, nearly double the base rate. The cost is low recall (it misses most hits), a trade-off chosen deliberately for the business goal above. The decision threshold was selected using 5-fold cross-validation on the training set only, then evaluated once on the test set.
 
-![Confusion Matrix](images/confusion_matrix_rf.png)
+The confusion matrices, feature importances and decision tree visualization are in the notebook.
 
 ## Key Insights
 
 - **Artist popularity dominates.** `avg_artist_popularity` accounts for roughly 88% of the Decision Tree's feature importance, so the model mostly captures "popular artists make popular songs". Audio features (liveness, danceability, year, acousticness) add a smaller contribution.
-
-![Feature Importance](images/feature_importance_rf.png)
 
 ## Data Pipeline
 
@@ -36,22 +34,16 @@ The Random Forest recommends far fewer tracks, but about 58% of them are real hi
 6. **Models:** Decision Tree baseline (entropy, `class_weight='balanced'`) and Random Forest (300 trees, `min_samples_leaf=20`).
 7. **Threshold tuning:** probability threshold chosen via `cross_val_predict` (5-fold) on the training set.
 
-## Baseline Decision Tree
-
-Top 3 levels of the baseline tree. Most top splits are on artist popularity.
-
-![Decision Tree](images/decision_tree_baseline.png)
-
 ## Limitations
 
-- Artist popularity dominates, so audio features alone have limited predictive power.
+- Artist popularity dominates, so audio features alone may have limited predictive power (not yet tested without it).
 - Recall is low by design; many potential hits are not recommended.
-- Results come from a single train/test split; no repeated runs or confidence intervals.
+- Results come from a single train/test split, with no repeated runs or confidence intervals.
 - A 15,000-track sample was used.
 
 ## Future Work
 
+- Train a secondary model without artist-level metrics to isolate audio-driven prediction.
 - Gradient boosting (XGBoost/LightGBM) and hyperparameter tuning.
 - Temporal features (audio trends by decade or season).
 - NLP on lyrics (sentiment, themes, explicit content flags).
-- Cross-validated confidence intervals for the reported metrics.
