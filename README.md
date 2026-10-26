@@ -1,46 +1,58 @@
-# Spotify Song Popularity Prediction & Analysis
+# Spotify Song Popularity Prediction
 
-An end-to-end Machine Learning project aimed at predicting whether a song on Spotify will achieve high popularity based on its audio features, release year, and artist metadata.
+An end-to-end ML project that predicts whether a Spotify track will be popular (top 30% by popularity score), based on audio features, release year, genre and artist metadata. Framed as a business problem: which tracks deserve a limited marketing budget?
 
-## 📌 Project Overview & Objective
-In the music industry, understanding what drives a song's success is crucial. This project builds a **Decision Tree Classifier** to classify tracks as "Popular" (top 30% most popular tracks based on a 70th percentile threshold) or "Not Popular". 
+## Business Objective
 
-Special care was taken to address potential biases (such as the overwhelming dominance of an artist's prior fame) to evaluate the true impact of musical and acoustic characteristics.
+For a record label, a wasted marketing budget (False Positive) is more costly than a missed hit (False Negative). The model is therefore tuned for **Precision** on the tracks it recommends, rather than overall accuracy or recall.
 
----
+## Results
 
-## 🔄 Data Pipeline & Workflow
-To ensure rigorous methodology and prevent **Data Leakage**, the following pipeline was implemented:
-1. **Stratified Train/Test Split (80/20):** The dataset was split prior to any preprocessing or statistical calculations.
-2. **Target Definition:** A binary target variable (`is_popular`) was established by calculating the 70th percentile threshold exclusively on the **training set**.
-3. **Feature Engineering & Encoding:**
-   - **One-Hot Encoding** was applied to the main `genre` feature.
-   - **Niche Genres Parsing:** Extracted and encoded the top 15 most frequent sub-genres from nested string lists.
-4. **Imputation & Scaling:** 
-   - Handled missing values using `SimpleImputer` (fitted on train).
-   - Normalized numerical features using `StandardScaler` (fitted on train).
-5. **Model Training:** Trained a `DecisionTreeClassifier` utilizing entropy and class balancing (`class_weight='balanced'`) to handle class distribution.
+Evaluated on a held-out test set of 3,000 tracks (29.7% popular):
 
----
+| Model | Precision | Recall | Tracks recommended |
+|---|---|---|---|
+| Random baseline (base rate) | 29.7% | - | - |
+| Decision Tree (depth 4, class_weight='balanced') | 42.8% | 72.8% | 1,513 / 3,000 |
+| **Random Forest (300 trees, threshold 0.5)** | **58.4%** | 21.0% | 320 / 3,000 |
 
-## 📊 Key Results & Insights
-* **The Dominance of Artist Popularity:** Initial feature importance and decision tree splitting indicate that an artist's historical popularity (`avg_artist_popularity`) acts as a primary gatekeeper for track success.
-* **The Power of Audio Features:** Once past the artist popularity threshold, the model successfully leverages secondary audio and contextual features—such as `danceability`, release `year`, and specific `genre` classifications—to refine its predictions.
-* **Model Performance:** The classification report and confusion matrix demonstrate a balanced trade-off in identifying popular tracks, proving that the model looks beyond mere brand recognition.
+The Random Forest recommends far fewer tracks, but about 58% of them are real hits, nearly double the base rate. The cost is low recall (it misses most hits), a trade-off chosen deliberately for the business goal above. The decision threshold was selected using 5-fold cross-validation on the training set only, then evaluated once on the test set.
 
+![Confusion Matrix](images/confusion_matrix_rf.png)
 
----
+## Key Insights
 
-## 🌳 Decision Tree Visualization
-A snippet of the top 3 levels of the trained Decision Tree, illustrating how the model splits data based on artist metrics and track attributes:
+- **Artist popularity dominates.** `avg_artist_popularity` accounts for roughly 88% of the Decision Tree's feature importance, so the model mostly captures "popular artists make popular songs". Audio features (liveness, danceability, year, acousticness) add a smaller contribution.
+- [Fill in after running the experiment without the artist feature: Precision of X% when `avg_artist_popularity` is removed, showing how much the audio features alone can predict.]
 
----
+![Feature Importance](images/feature_importance_rf.png)
 
-## 💡 Hypotheses & Recommendations for Future Work
-To further improve predictive power and reduce potential dataset limitations, future iterations of this project should explore:
-1. **Advanced Temporal Features:** Incorporating audio trends over specific decades or seasons to see if listener preferences for specific acousticness or energy shift over time.
-2. **Natural Language Processing (NLP):** Analyzing the `lyrics` column (e.g., sentiment analysis, word embeddings, or explicit content flags) to test whether lyrical themes correlate with popularity.
-3. **Ensemble Models:** Upgrading from a single Decision Tree to Random Forests or Gradient Boosting (XGBoost/LightGBM) to capture non-linear interactions and boost accuracy metrics.
-4. **Handling Artist Bias:** Training a secondary model *without* artist-level metrics to isolate pure audio-driven hit prediction.
+## Data Pipeline
 
-5.**"From a business perspective:** for a record label, Precision is prioritized over Recall. While missing a potential hit (False Negative) represents a missed opportunity, allocating a limited marketing budget to a failing track (False Positive) results in a direct financial loss. Therefore, tuning the decision threshold to maximize Precision ensures high confidence in marketing investments
+1. **Sampling:** 15,000 tracks sampled from the full dataset.
+2. **Train/Test split (80/20)** performed before any preprocessing or statistics.
+3. **Target definition:** binary `is_popular`, using the 70th percentile of popularity computed on the training set only.
+4. **Feature engineering:** One-Hot Encoding for `genre`; top 15 niche sub-genres (selected on train only) parsed from nested string lists and encoded.
+5. **Preprocessing:** `SimpleImputer` (mean) and `StandardScaler`, both fitted on train only.
+6. **Models:** Decision Tree baseline (entropy, `class_weight='balanced'`) and Random Forest (300 trees, `min_samples_leaf=20`).
+7. **Threshold tuning:** probability threshold chosen via `cross_val_predict` (5-fold) on the training set.
+
+## Baseline Decision Tree
+
+Top 3 levels of the baseline tree. Most top splits are on artist popularity.
+
+![Decision Tree](images/decision_tree_baseline.png)
+
+## Limitations
+
+- Artist popularity dominates, so audio features alone have limited predictive power.
+- Recall is low by design; many potential hits are not recommended.
+- Results come from a single train/test split; no repeated runs or confidence intervals.
+- A 15,000-track sample was used.
+
+## Future Work
+
+- Gradient boosting (XGBoost/LightGBM) and hyperparameter tuning.
+- Temporal features (audio trends by decade or season).
+- NLP on lyrics (sentiment, themes, explicit content flags).
+- Cross-validated confidence intervals for the reported metrics.
